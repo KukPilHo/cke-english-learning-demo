@@ -122,9 +122,14 @@
         runButton.addEventListener('click', runAnalysis);
 
         async function callGpt(systemPrompt, userMessage) {
-            const apiKey = apiKeyInput.value;
+            const apiKey = apiKeyInput.value.trim();
             if (!apiKey) {
                 throw new Error('OpenAI API 키를 입력해주세요.');
+            }
+
+            // API 키 유효성 검사
+            if (!apiKey.startsWith('sk-')) {
+                throw new Error('올바른 OpenAI API 키 형식이 아닙니다. (sk-로 시작해야 합니다)');
             }
 
             const API_URL = 'https://api.openai.com/v1/chat/completions';
