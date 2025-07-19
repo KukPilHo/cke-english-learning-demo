@@ -89,10 +89,8 @@
     </div>
 
     <script type="module">
-        // prompt-manager.js에서 프롬프트 관리자 인스턴스를 가져옵니다.
-        import promptManager from './prompt-manager.js';
+        import promptManager from './prompts.js';
         
-        // DOM 요소들을 변수에 할당합니다.
         const apiKeyInput = document.getElementById('apiKey');
         const inputText = document.getElementById('inputText');
         const runButton = document.getElementById('runButton');
@@ -107,29 +105,25 @@
         const step3Output = document.getElementById('step3-output');
         const step4Output = document.getElementById('step4-output');
         
-        // 페이지가 로드될 때 실행되는 이벤트 리스너
         window.addEventListener('load', () => {
-            // 로컬 스토리지에서 저장된 API 키를 불러옵니다.
             const savedApiKey = localStorage.getItem('openai_api_key');
             if (savedApiKey) {
                 apiKeyInput.value = savedApiKey;
             }
         });
 
-        // API 키 입력창에 변화가 있을 때마다 로컬 스토리지에 저장합니다.
         apiKeyInput.addEventListener('input', () => {
             localStorage.setItem('openai_api_key', apiKeyInput.value);
         });
 
-        // '결과 생성' 버튼 클릭 시 runAnalysis 함수를 실행합니다.
         runButton.addEventListener('click', runAnalysis);
 
-        // OpenAI GPT API를 호출하는 비동기 함수
         async function callGpt(systemPrompt, userMessage) {
             const apiKey = apiKeyInput.value.trim();
             if (!apiKey) {
                 throw new Error('OpenAI API 키를 입력해주세요.');
             }
+
             if (!apiKey.startsWith('sk-')) {
                 throw new Error('올바른 OpenAI API 키 형식이 아닙니다. (sk-로 시작해야 합니다)');
             }
@@ -163,9 +157,8 @@
             return data.choices[0].message.content.trim();
         }
 
-        // a.C.K.E. 분석을 실행하는 메인 비동기 함수
         async function runAnalysis() {
-            if (!apiKeyInput.value.trim()) {
+            if (!apiKeyInput.value) {
                 alert('OpenAI API 키를 입력해주세요.');
                 return;
             }
@@ -174,7 +167,6 @@
                 return;
             }
 
-            // UI를 로딩 상태로 변경
             runButton.disabled = true;
             loadingIndicator.classList.remove('hidden');
             loadingIndicator.classList.add('flex');
@@ -186,13 +178,12 @@
             try {
                 const originalText = inputText.value.trim();
 
-                // 1단계와 2단계는 원본 텍스트를 기반으로 하므로 동시에 API 호출 (성능 향상)
+                // 1단계와 2단계는 원본 텍스트를 기반으로 하므로 동시에 실행 가능
                 const [step1Result, step2Result] = await Promise.all([
                     callGpt(promptManager.getPrompt('step1'), originalText),
                     callGpt(promptManager.getPrompt('step2'), originalText)
                 ]);
 
-                // 1, 2단계 결과 표시
                 step1Output.textContent = step1Result;
                 step1Container.classList.remove('hidden');
 
@@ -204,7 +195,7 @@
                 step3Output.textContent = step3Result;
                 step3Container.classList.remove('hidden');
 
-                // 4단계 로직 수정: 2단계 결과를 그대로 복사하여 표시
+                // 4단계 로직 수정: 2단계 결과를 그대로 복사
                 const step4Result = step2Result;
                 step4Output.textContent = step4Result;
                 step4Container.classList.remove('hidden');
@@ -213,7 +204,6 @@
                 alert(error.message);
                 console.error(error);
             } finally {
-                // UI를 다시 활성 상태로 변경
                 runButton.disabled = false;
                 loadingIndicator.classList.add('hidden');
                 loadingIndicator.classList.remove('flex');
