@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>a.C.K.E. 영어 학습법 자동 시연 데모</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Inter', 'Noto Sans KR', monospace;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">a.C.K.E. 영어 학습법 자동 시연</h1>
+            <p class="mt-2 text-gray-600">영어 지문을 입력하면 a.C.K.E. 학습법의 4단계를 자동으로 생성합니다.</p>
+        </header>
+
+        <!-- API 키 입력 섹션 -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-3">1. OpenAI API 키 설정</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                API 키는 서버에 저장되지 않고, 현재 사용 중인 브라우저에만 안전하게 보관됩니다. 
+                <a href="https://platform.openai.com/account/api-keys" target="_blank" class="text-blue-600 hover:underline">여기</a>에서 API 키를 발급받을 수 있습니다.
+            </p>
+            <input type="password" id="apiKey" placeholder="sk-..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+        </div>
+
+        <!-- 텍스트 입력 섹션 -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-3">2. 분석할 영어 지문 입력</h2>
+            <textarea id="inputText" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="분석하고 싶은 영어 지문을 여기에 붙여넣으세요. 예: My best friend is the captain of our team. Yesterday, we didn't play because it was raining."></textarea>
+        </div>
+
+        <!-- 실행 버튼 -->
+        <div class="text-center mb-8">
+            <button id="runButton" class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+                결과 생성
+            </button>
+        </div>
+
+        <!-- 로딩 인디케이터 -->
+        <div id="loadingIndicator" class="hidden flex-col items-center justify-center my-8">
+            <div class="loader"></div>
+            <p class="mt-4 text-gray-600">결과를 생성 중입니다. 잠시만 기다려주세요...</p>
+        </div>
+        
+        <!-- 결과 출력 영역 -->
+        <div id="results" class="space-y-6">
+            <div id="step1-container" class="hidden bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-2xl font-bold mb-4 border-b pb-2 text-indigo-600">1단계: Analyze (문장 성분 분석)</h3>
+                <pre id="step1-output" class="text-gray-700 leading-relaxed"></pre>
+            </div>
+            <div id="step2-container" class="hidden bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-2xl font-bold mb-4 border-b pb-2 text-teal-600">2단계: Copy (의미 블록 나누기)</h3>
+                <pre id="step2-output" class="text-gray-700 leading-relaxed"></pre>
+            </div>
+            <div id="step3-container" class="hidden bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-2xl font-bold mb-4 border-b pb-2 text-amber-600">3단계: Korean (블록 단위 해석)</h3>
+                <pre id="step3-output" class="text-gray-700 leading-relaxed"></pre>
+            </div>
+            <div id="step4-container" class="hidden bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-2xl font-bold mb-4 border-b pb-2 text-rose-600">4단계: English (영작 복원)</h3>
+                <pre id="step4-output" class="text-gray-700 leading-relaxed"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import promptManager from './prompt-manager.js';
+        
+        const apiKeyInput = document.getElementById('apiKey');
+        const inputText = document.getElementById('inputText');
+        const runButton = document.getElementById('runButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultsContainer = document.getElementById('results');
+        const step1Container = document.getElementById('step1-container');
+        const step2Container = document.getElementById('step2-container');
+        const step3Container = document.getElementById('step3-container');
+        const step4Container = document.getElementById('step4-container');
+        const step1Output = document.getElementById('step1-output');
+        const step2Output = document.getElementById('step2-output');
+        const step3Output = document.getElementById('step3-output');
+        const step4Output = document.getElementById('step4-output');
+        
+        window.addEventListener('load', () => {
+            const savedApiKey = localStorage.getItem('openai_api_key');
+            if (savedApiKey) {
+                apiKeyInput.value = savedApiKey;
+            }
+            
+            // 프롬프트 매니저 정보 로그
+            promptManager.logPromptInfo();
+        });
+
+        apiKeyInput.addEventListener('input', () => {
+            localStorage.setItem('openai_api_key', apiKeyInput.value);
+        });
+
+        runButton.addEventListener('click', runAnalysis);
+
+        async function callGpt(systemPrompt, userMessage) {
+            const apiKey = apiKeyInput.value;
+            if (!apiKey) {
+                throw new Error('OpenAI API 키를 입력해주세요.');
+            }
+
+            const API_URL = 'https://api.openai.com/v1/chat/completions';
+
+            const requestBody = {
+                model: 'gpt-4-turbo',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userMessage }
+                ]
+            };
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('API Error:', errorData);
+                throw new Error(`API 오류가 발생했습니다: ${errorData.error.message}`);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content.trim();
+        }
+
+        async function runAnalysis() {
+            if (!apiKeyInput.value) {
+                alert('OpenAI API 키를 입력해주세요.');
+                return;
+            }
+            if (!inputText.value.trim()) {
+                alert('분석할 영어 지문을 입력해주세요.');
+                return;
+            }
+
+            runButton.disabled = true;
+            loadingIndicator.classList.remove('hidden');
+            loadingIndicator.classList.add('flex');
+            
+            [step1Container, step2Container, step3Container, step4Container].forEach(container => {
+                container.classList.add('hidden');
+            });
+
+            try {
+                const originalText = inputText.value.trim();
+
+                const [step1Result, step2Result] = await Promise.all([
+                    callGpt(promptManager.getPrompt('step1'), originalText),
+                    callGpt(promptManager.getPrompt('step2'), originalText)
+                ]);
+
+                step1Output.textContent = step1Result;
+                step1Container.classList.remove('hidden');
+
+                step2Output.textContent = step2Result;
+                step2Container.classList.remove('hidden');
+
+                const step3Result = await callGpt(promptManager.getPrompt('step3'), step2Result);
+                step3Output.textContent = step3Result;
+                step3Container.classList.remove('hidden');
+
+                const step4Result = await callGpt(promptManager.getPrompt('step4'), step3Result);
+                step4Output.textContent = step4Result;
+                step4Container.classList.remove('hidden');
+
+            } catch (error) {
+                alert(error.message);
+                console.error(error);
+            } finally {
+                runButton.disabled = false;
+                loadingIndicator.classList.add('hidden');
+                loadingIndicator.classList.remove('flex');
+            }
+        }
+    </script>
+</body>
+</html>
