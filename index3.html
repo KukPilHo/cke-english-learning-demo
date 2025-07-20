@@ -49,7 +49,7 @@
 
         <div class="bg-white p-6 rounded-xl shadow-md mb-6">
             <h2 class="text-xl font-semibold mb-3">2. 분석할 영어 지문 입력</h2>
-            <textarea id="inputText" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="분석하고 싶은 영어 지문을 여기에 붙여넣으세요. 예: The practice of medicine has meant the average age to which people in all nations may expect to live is higher than it has been in recorded history..."></textarea>
+            <textarea id="inputText" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="분석하고 싶은 영어 지문을 여기에 붙여넣으세요. 예: My best friend is the captain of our team. Yesterday, we didn't play because it was raining."></textarea>
         </div>
 
         <div class="text-center mb-8">
@@ -158,64 +158,66 @@ First, perform the broadest-level cuts to separate the main building blocks of t
 ## Level 2 Rules: Granular Intra-Clause Separation
 After applying Level 1 rules, analyze the content *inside* each major block and apply these more granular rules. This process is recursive.
 
-1.  **Subject-Predicate Separation (The Golden Rule):** The most fundamental split is between the **Complete Subject** and the **Complete Predicate**.
-    * The **Complete Subject** (the noun/pronoun and all its modifiers) forms its own block. **(Clarification: An interrupting clause like 'he realised,' or 'she said,' should be included within this subject block.)**
+1.  The most fundamental split is between the Complete Subject and the Complete Predicate.
+    * The Complete Subject (the noun/pronoun and all its modifiers) forms its own block. (Clarification: An interrupting clause like 'he realised,' or 'she said,' should be included within this subject block.)
+        * *Example:* \`The fierce green fire in the eye of a dying old wolf\` is the complete subject.
     * The **Complete Predicate** (the verb and everything that follows it) is then analyzed further.
 
-2.  **Verb-Object/Complement Cohesion:** **A verb and its immediate direct object noun phrase should be kept together** as a single functional block. *Example: \`has meant the average age\`*. Only separate the object if it is followed by a long chain of modifiers.
+2.  **Verb-Object/Complement Separation:** Within the predicate, separate the main verb from its object or complement.
+    * If the verb has a direct object, the verb and its object often form a block. *Example: \`reflected something\`*
+    * If the verb is a 'be' verb, the verb and its complement form a block. *Example: \`was that which sustained the integrity\`*
 
-3.  **Aggressively Isolate Modifiers:** Any phrase that describes or modifies another part of the sentence should be aggressively separated into its own block. This is critical for clarity. This includes Prepositional Phrases, Participial Phrases, etc.
+3.  **Aggressively Isolate Modifiers:** Any phrase that describes or modifies another part of the sentence should be aggressively separated into its own block. This is critical for clarity. This includes:
+    * **Prepositional Phrases:** *Example: \`in the eye of a dying old wolf\` / \`of the wolf and the mountain.\`*
+    * **Participial Phrases (-ing / -ed phrases):** *Example: \`known only to her and the mountain.\`*
+    * **Appositives** (phrases that rename a noun, often set off by commas): *Example: \`Aldo Leopold,\`*
 
 # Critical Nuance & Edge Case Rules
-
 1.  **Recursive Application:** All rules are recursive. Once you isolate a subordinate clause (e.g., \`that his own understanding...\`), you must then apply the full set of Level 1 and Level 2 rules *inside* that clause.
-2.  **The Colon Rule:** A colon (\`:\`) signifies a clarification or a list. The content following the colon should always start on a new line and be treated as a new series of blocks.
-3.  **List Integrity Rule:** If a verb's object or a modifier is a list of items, you must **keep the entire list together as one single block.** Do not separate items joined by commas or the word 'and'.
-4.  **Complex Modifier Deconstruction:** You must break down complex modifiers into their constituent parts.
-    * **Infinitive Phrases:** An infinitive phrase acting as a modifier must be isolated. *Example: to survive serious disorders*
-    * **Relative Clauses:** Within a relative clause (e.g., starting with 'to which'), you must apply blocking rules recursively. Separate the clause's subject from its verb phrase. *Example: \`to which people in all nations\` / \`may expect to live\`*
-    * **'Such As' Phrases:** A phrase beginning with "such as" that provides examples should be its own block.
-5.  **'Noun of Noun' Integrity:** As a foundational principle, 'noun of noun' structures connected by 'of' should be kept together within a block whenever possible.
+2.  **The Colon Rule:** A colon (\`:\`) signifies a clarification or a list. The content following the colon should always start on a new line and be treated as a new series of blocks. *Example: \`...to think differently:\`*
+3.  **Long Object/List Rule:** If a verb has a very long object consisting of a list, break that list down into smaller semantic chunks, typically separated by commas or conjunctions. *Example: \`the interdependence of animals, / the environment and humanity.\`*
+4.  **'Noun of Noun' Integrity:** As a foundational principle, 'noun of noun' structures connected by 'of' should be kept together within a block whenever possible. *Example: \`the eye of a dying old wolf\`*
 
-# In-Depth Walkthrough of Target Examples
+# In-Depth Walkthrough of the Target Example
+To ensure perfect execution, here is a step-by-step deconstruction of a complex text according to the rules.
 
-## Example 1 Walkthrough
-* **Input:** \`Good behaviour, he realised, was that which sustained the integrity, stability and beauty of the land.\`
-* **Reasoning & Output:**
-    1.  Isolate the Complete Subject, including the interrupting clause (Level 2, Rule 1 Clarification): \`Good behaviour, he realised,\`
-    2.  Isolate the Predicate, which is a 'be' verb + complement. The complement is a long list, but it must be kept together (Nuance Rule 3): \`was that which sustained the integrity, stability and beauty of the land.\`
-* **Final Output:**
+* **Input Sentence 1:** \`The fierce green fire in the eye of a dying old wolf reflected something known only to her and the mountain.\`
+* **Reasoning and Your Correct Output:**
+    1.  Isolate the Complete Subject phrase: \`The fierce green fire\`
+    2.  Isolate the prepositional phrase modifying 'fire': \`in the eye of a dying old wolf\`
+    3.  Isolate the Verb + Object phrase: \`reflected something\`
+    4.  Isolate the participial phrase modifying 'something': \`known only to her and the mountain.\`
+* **Final Output for Sentence 1:**
     \`\`\`
-    Good behaviour, he realised,
-    was that which sustained the integrity, stability and beauty of the land.
+    The fierce green fire
+    in the eye of a dying old wolf
+    reflected something
+    known only to her and the mountain.
     \`\`\`
 
-## Example 2 Walkthrough
-* **Input:** \`The practice of medicine has meant the average age to which people in all nations may expect to live is higher than it has been in recorded history...\`
-* **Reasoning & Output:**
-    1.  Isolate the Subject: \`The practice of medicine\`
-    2.  Isolate the Verb and its immediate Direct Object together (Level 2, Rule 2): \`has meant the average age\`
-    3.  Isolate the complex modifier (a relative clause) and deconstruct it recursively (Nuance Rule 4):
-        a. Start of the clause: \`to which people in all nations\`
-        b. Verb phrase of the clause: \`may expect to live\`
-    4.  Isolate the main verb for "the average age": \`is higher than it has been\`
-    5.  Isolate the final prepositional phrase modifier: \`in recorded history,\`
-* **Final Output:**
+* **Input Sentence 2:** \`The hunter, Aldo Leopold, sensed that his own understanding, Fewer wolves meant more deer, did not have the wisdom of the wolf and the mountain.\`
+* **Reasoning and Your Correct Output:**
+    1.  Isolate the Complete Subject + Verb: \`The hunter, Aldo Leopold, sensed\`
+    2.  Isolate the subordinate \`that\` clause, which starts a new major block.
+    3.  *Inside the \`that\` clause*, apply rules recursively:
+        a. Isolate the subject of the clause: \`that his own understanding,\`
+        b. Isolate the appositive phrase clarifying 'understanding': \`Fewer wolves meant more deer,\`
+        c. Isolate the predicate of the clause: \`did not have the wisdom\`
+        d. Isolate the prepositional phrase modifying 'wisdom': \`of the wolf and the mountain.\`
+* **Final Output for Sentence 2:**
     \`\`\`
-    The practice of medicine
-    has meant the average age
-    to which people in all nations
-    may expect to live
-    is higher than it has been
-    in recorded history,
+    The hunter, Aldo Leopold, sensed
+    that his own understanding,
+    Fewer wolves meant more deer,
+    did not have the wisdom
+    of the wolf and the mountain.
     \`\`\`
 
 # Output Format
 -   Provide no commentary, preamble, or explanation.
 -   Your response should consist *only* of the deconstructed text.
 -   Each semantic block must be on a new line.
--   If a sentence consists of two independent clauses joined by a coordinating conjunction (like ', and' or ', but'), insert a blank line after the first clause to visually separate them.
--   Do not add any trailing characters like \`/\` or \`-\`.`,
+-   Do not add any trailing characters like \`/\` or \`-\`. The line break is the only separator.`,
 
             step3: `# 역할 및 목표 (Role & Goal)
 너는 특허받은 'a.C.K.E.' 영어 학습법의 번역 전문가, 'CKE Translator'이다. 너의 유일한 임무는 a.C.K.E. 분석 단계에 따라 '블록' 단위로 나뉘어 입력된 영어 텍스트를 받는 것이다. 그리고 각 영어 블록을 그 의미에 맞게, 줄을 정확히 맞춰 자연스러운 한국어로 번역해야 한다.
