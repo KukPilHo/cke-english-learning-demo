@@ -7,9 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', 'Noto Sans KR', sans-serif;
-        }
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
         .loader {
             border: 4px solid #f3f3f3;
             border-radius: 50%;
@@ -83,260 +81,98 @@
         </div>
     </div>
 
+    <script src="prompts.js"></script>
     <script>
-        // DOM 요소들을 변수에 할당합니다.
-        const apiKeyInput = document.getElementById('apiKey');
-        const inputText = document.getElementById('inputText');
-        const runButton = document.getElementById('runButton');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const resultsContainer = document.getElementById('results');
-        const step1Container = document.getElementById('step1-container');
-        const step2Container = document.getElementById('step2-container');
-        const step3Container = document.getElementById('step3-container');
-        const step4Container = document.getElementById('step4-container');
-        const step1Output = document.getElementById('step1-output');
-        const step2Output = document.getElementById('step2-output');
-        const step3Output = document.getElementById('step3-output');
-        const step4Output = document.getElementById('step4-output');
+        document.addEventListener('DOMContentLoaded', () => {
+            const apiKeyInput = document.getElementById('apiKey');
+            const inputText = document.getElementById('inputText');
+            const runButton = document.getElementById('runButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultsContainer = document.getElementById('results');
+            const step1Container = document.getElementById('step1-container');
+            const step2Container = document.getElementById('step2-container');
+            const step3Container = document.getElementById('step3-container');
+            const step4Container = document.getElementById('step4-container');
+            const step1Output = document.getElementById('step1-output');
+            const step2Output = document.getElementById('step2-output');
+            const step3Output = document.getElementById('step3-output');
+            const step4Output = document.getElementById('step4-output');
 
-        // 프롬프트를 관리하는 객체
-        const prompts = {
-            step1: `# 역할 및 목표 (Role & Goal)
-너는 특허받은 'a.C.K.E.' 영어 학습법의 최고 분석가, 'CKE Analyzer'이다. 너의 핵심 목표는 사용자로부터 영어 문장을 입력받아, a.C.K.E. 학습법 1단계(Analyze)에 명시된 규칙에 따라 문장의 각 구성 요소를 **매우 정교하고, 예외 없이, 일반적인 원칙에 따라** 분석하고 태그를 붙여 출력하는 것이다.
-
-# 분석 및 태그 규칙 (Analysis & Tagging Rules)
-**지정된 6개의 태그 외에는 절대 사용하지 마시오: [주어:], [동사:], [보어:], [목적어:], [전치사구:], [수식어:]**
-- [주어: ]: 문장의 주체.
-- [동사: ]: 주어의 동작이나 상태. (조동사, not, 부사를 포함할 수 있음. 예: is not flying, can play)
-- [보어: ]: 주어를 보충 설명하는 말.
-- [목적어: ]: 동사의 대상.
-- [전치사구: ]: 전치사로 시작하는 덩어리.
-- [수식어: ]: 문장의 다른 요소를 꾸며주는 말. (부사, 형용사, 부사절, 접속사 등)
-
-# 핵심 분석 원칙 (Core Analysis Principles)
-1.  **문장 단위 분석:** 입력된 텍스트를 마침표(.), 물음표(?), 느낌표(!)를 기준으로 문장 단위로 나눈다. 각 문장을 독립적으로 분석하고, 분석된 문장 사이에 줄바꿈을 한 번 넣어 구분한다.
-2.  **개별 태그 원칙 (CRITICAL):** 각 문법적 요소는 **반드시 개별적으로 태그**를 붙여야 한다. **절대로 다른 종류의 요소를 하나의 태그에 포함시키지 마시오.**
-3.  **내부 구조 분석 원칙:** 만약 하나의 문장 성분(특히 '수식어')이 그 자체로 주어와 동사를 가진 절(clause)일 경우, **반드시 그 내부 구조까지 분석하여 태그를 붙여야 한다.**
-4.  **명령문 분석 원칙:** 주어 없이 동사 원형으로 시작하는 명령문의 경우, 동사를 [동사:]로 태그한다. 생략된 주어 'You'는 표기하지 않는다.
-
-# 흔한 오류 및 올바른 실행 예시 (Common Errors & Correct Execution)
-
-## 오류 유형 1: 부사를 목적어로 착각
-- 사용자 입력: Many birds fly far.
-- **너의 올바른 출력:** [주어: Many birds] [동사: fly] [수식어: far].
-
-## 오류 유형 2: 부사와 주어를 한 태그로 묶음
-- 사용자 입력: Then it calls to its friends.
-- **너의 올바른 출력:** [수식어: Then] [주어: it] [동사: calls] [전치사구: to its friends].
-
-## 오류 유형 3: 동사구 분석 오류
-- 사용자 입력: It is not flying alone.
-- **너의 올바른 출력:** [주어: It] [동사: is not flying] [수식어: alone].
-
-## 오류 유형 4: 명령문 분석 오류
-- 사용자 입력: Look at the goose in the sky.
-- **너의 올바른 출력:** [동사: Look] [전치사구: at the goose] [전치사구: in the sky].
-
-# 출력 형식 (Output Format)
-- 어떠한 인사말이나 부연 설명 없이, 태그가 적용된 분석 문장만 즉시 출력한다.`,
-
-            step2: `# Persona & Core Objective
-You are a master-level AI assistant named 'CKE Deconstructor', possessing an expert, nuanced understanding of the patented 'a.C.K.E.' English learning method. Your sole purpose is to receive complex English texts and deconstruct them into the most precise, semantically coherent 'blocks' as defined by the official a.C.K.E. methodology. Your analysis must be deep, going beyond simple phrases to capture the true grammatical and logical structure of each sentence.
-
-# Core Philosophy: Semantic Chunking
-Your primary directive is not just to split sentences, but to perform "Semantic Chunking." This means every output block should represent a single, complete unit of meaning, whether it's a subject, an action, a description, or a modifier. The goal is to break down the sentence into the smallest possible chunks that a learner can digest one by one.
-
-# Hierarchical Blocking Rules (Apply in Order)
-You must process sentences using a multi-level analysis. First, separate the major components, then break down those components further.
-
-## Level 1 Rules: Foundational Sentence Separation
-First, perform the broadest-level cuts to separate the main building blocks of the sentence.
-
-1.  **Isolate Introductory Elements:** Any phrase or clause that comes *before* the main subject of a sentence MUST be isolated in its own block. This includes introductory prepositional phrases (\`In the wolf's eyes,\`), adverbial phrases, etc.
-2.  **Separate Major Clauses:** If a sentence contains multiple clauses (e.g., a main clause and a subordinate clause starting with \`that\`, \`which\`, \`because\`, \`when\`), separate them into distinct blocks.
-
-## Level 2 Rules: Granular Intra-Clause Separation
-After applying Level 1 rules, analyze the content *inside* each major block and apply these more granular rules. This process is recursive.
-
-1.  **Subject-Predicate Separation (The Golden Rule):** The most fundamental split is between the **Complete Subject** and the **Complete Predicate**.
-    * The **Complete Subject** (the noun/pronoun and all its modifiers) forms its own block. **(Clarification: An interrupting clause like 'he realised,' or 'she said,' should be included within this subject block.)**
-    * The **Complete Predicate** (the verb and everything that follows it) is then analyzed further.
-
-2.  **Verb-Object/Complement Cohesion:** **A verb and its immediate direct object noun phrase should be kept together** as a single functional block. *Example: \`has meant the average age\`*. Only separate the object if it is followed by a long chain of modifiers.
-
-3.  **Aggressively Isolate Modifiers:** Any phrase that describes or modifies another part of the sentence should be aggressively separated into its own block. This is critical for clarity. This includes Prepositional Phrases, Participial Phrases, etc.
-
-# Critical Nuance & Edge Case Rules
-
-1.  **Recursive Application:** All rules are recursive. Once you isolate a subordinate clause (e.g., \`that his own understanding...\`), you must then apply the full set of Level 1 and Level 2 rules *inside* that clause.
-2.  **The Colon Rule:** A colon (\`:\`) signifies a clarification or a list. The content following the colon should always start on a new line and be treated as a new series of blocks.
-3.  **List Integrity Rule:** If a verb's object or a modifier is a list of items, you must **keep the entire list together as one single block.** Do not separate items joined by commas or the word 'and'.
-4.  **Complex Modifier Deconstruction:** You must break down complex modifiers into their constituent parts.
-    * **Infinitive Phrases:** An infinitive phrase acting as a modifier must be isolated. *Example: to survive serious disorders*
-    * **Relative Clauses:** Within a relative clause (e.g., starting with 'to which'), you must apply blocking rules recursively. Separate the clause's subject from its verb phrase. *Example: \`to which people in all nations\` / \`may expect to live\`*
-    * **'Such As' Phrases:** A phrase beginning with "such as" that provides examples should be its own block.
-5.  **'Noun of Noun' Integrity:** As a foundational principle, 'noun of noun' structures connected by 'of' should be kept together within a block whenever possible.
-
-# In-Depth Walkthrough of Target Examples
-
-## Example 1 Walkthrough
-* **Input:** \`Good behaviour, he realised, was that which sustained the integrity, stability and beauty of the land.\`
-* **Reasoning & Output:**
-    1.  Isolate the Complete Subject, including the interrupting clause (Level 2, Rule 1 Clarification): \`Good behaviour, he realised,\`
-    2.  Isolate the Predicate, which is a 'be' verb + complement. The complement is a long list, but it must be kept together (Nuance Rule 3): \`was that which sustained the integrity, stability and beauty of the land.\`
-* **Final Output:**
-    \`\`\`
-    Good behaviour, he realised,
-    was that which sustained the integrity, stability and beauty of the land.
-    \`\`\`
-
-## Example 2 Walkthrough
-* **Input:** \`The practice of medicine has meant the average age to which people in all nations may expect to live is higher than it has been in recorded history...\`
-* **Reasoning & Output:**
-    1.  Isolate the Subject: \`The practice of medicine\`
-    2.  Isolate the Verb and its immediate Direct Object together (Level 2, Rule 2): \`has meant the average age\`
-    3.  Isolate the complex modifier (a relative clause) and deconstruct it recursively (Nuance Rule 4):
-        a. Start of the clause: \`to which people in all nations\`
-        b. Verb phrase of the clause: \`may expect to live\`
-    4.  Isolate the main verb for "the average age": \`is higher than it has been\`
-    5.  Isolate the final prepositional phrase modifier: \`in recorded history,\`
-* **Final Output:**
-    \`\`\`
-    The practice of medicine
-    has meant the average age
-    to which people in all nations
-    may expect to live
-    is higher than it has been
-    in recorded history,
-    \`\`\`
-
-# Output Format
-- 한 줄에 최대 7개의 단어만 들어가게 해줘.
--   Provide no commentary, preamble, or explanation.
--   Your response should consist *only* of the deconstructed text.
--   Each semantic block must be on a new line.
--   If a sentence consists of two independent clauses joined by a coordinating conjunction (like ', and' or ', but'), insert a blank line after the first clause to visually separate them.
--   Do not add any trailing characters like \`/\` or \`-\`. `,
-            step3: `# 역할 및 목표 (Role & Goal)
-너는 특허받은 'a.C.K.E.' 영어 학습법의 번역 전문가, 'CKE Translator'이다. 너의 유일한 임무는 a.C.K.E. 분석 단계에 따라 '블록' 단위로 나뉘어 입력된 영어 텍스트를 받는 것이다. 그리고 각 영어 블록을 그 의미에 맞게, 줄을 정확히 맞춰 자연스러운 한국어로 번역해야 한다.
-# 핵심 규칙 (Core Rules)
-- 구조적 일치성: 입력된 영어 텍스트는 한 줄에 하나의 의미 블록으로 구성된다. 출력하는 한국어 번역 역시 반드시 동일한 줄 수를 가져야 한다. 절대로 블록(줄)을 합치거나 임의로 나누지 마라.
-- 블록 내 자연스러운 번역: 각 줄(블록)을 번역할 때는, 그 블록 안에서 가장 자연스러운 한국어 어순과 표현을 사용해야 한다.
-- 설명 금지: 오직 번역 결과물만 출력해야 한다.`,
-        };
-        
-        // 페이지가 로드될 때 실행되는 이벤트 리스너
-        window.addEventListener('load', () => {
-            // 로컬 스토리지에서 저장된 API 키를 불러옵니다.
             const savedApiKey = localStorage.getItem('openai_api_key');
             if (savedApiKey) {
                 apiKeyInput.value = savedApiKey;
             }
-        });
 
-        // API 키 입력창에 변화가 있을 때마다 로컬 스토리지에 저장합니다.
-        apiKeyInput.addEventListener('input', () => {
-            localStorage.setItem('openai_api_key', apiKeyInput.value);
-        });
-
-        // '결과 생성' 버튼 클릭 시 runAnalysis 함수를 실행합니다.
-        runButton.addEventListener('click', runAnalysis);
-
-        // OpenAI GPT API를 호출하는 비동기 함수
-        async function callGpt(systemPrompt, userMessage) {
-            const apiKey = apiKeyInput.value.trim();
-            if (!apiKey) {
-                throw new Error('OpenAI API 키를 입력해주세요.');
-            }
-            if (!apiKey.startsWith('sk-')) {
-                throw new Error('올바른 OpenAI API 키 형식이 아닙니다. (sk-로 시작해야 합니다)');
-            }
-
-            const API_URL = 'https://api.openai.com/v1/chat/completions';
-
-            const requestBody = {
-                model: 'gpt-4-turbo',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userMessage }
-                ]
-            };
-
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify(requestBody)
+            apiKeyInput.addEventListener('input', () => {
+                localStorage.setItem('openai_api_key', apiKeyInput.value);
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('API Error:', errorData);
-                throw new Error(`API 오류가 발생했습니다: ${errorData.error.message}`);
+            runButton.addEventListener('click', runAnalysis);
+
+            async function callGpt(systemPrompt, userMessage) {
+                const apiKey = apiKeyInput.value.trim();
+                if (!apiKey) throw new Error('OpenAI API 키를 입력해주세요.');
+                if (!apiKey.startsWith('sk-')) throw new Error('올바른 OpenAI API 키 형식이 아닙니다. (sk-로 시작해야 합니다)');
+                
+                const API_URL = 'https://api.openai.com/v1/chat/completions';
+                const requestBody = {
+                    model: 'gpt-4-turbo',
+                    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }]
+                };
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API 오류: ${errorData.error.message}`);
+                }
+                
+                const data = await response.json();
+                return data.choices[0].message.content.trim();
             }
 
-            const data = await response.json();
-            return data.choices[0].message.content.trim();
-        }
+            async function runAnalysis() {
+                if (!apiKeyInput.value.trim() || !inputText.value.trim()) {
+                    alert('API 키와 분석할 영어 지문을 모두 입력해주세요.');
+                    return;
+                }
 
-        // a.C.K.E. 분석을 실행하는 메인 비동기 함수
-        async function runAnalysis() {
-            if (!apiKeyInput.value.trim()) {
-                alert('OpenAI API 키를 입력해주세요.');
-                return;
+                runButton.disabled = true;
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+                [step1Container, step2Container, step3Container, step4Container].forEach(c => c.classList.add('hidden'));
+
+                try {
+                    const originalText = inputText.value.trim();
+                    const [step1Result, step2Result] = await Promise.all([
+                        callGpt(prompts.step1, originalText),
+                        callGpt(prompts.step2, originalText)
+                    ]);
+
+                    step1Output.textContent = step1Result;
+                    step1Container.classList.remove('hidden');
+                    step2Output.textContent = step2Result;
+                    step2Container.classList.remove('hidden');
+
+                    const step3Result = await callGpt(prompts.step3, step2Result);
+                    step3Output.textContent = step3Result;
+                    step3Container.classList.remove('hidden');
+
+                    step4Output.textContent = step2Result;
+                    step4Container.classList.remove('hidden');
+                } catch (error) {
+                    alert(error.message);
+                } finally {
+                    runButton.disabled = false;
+                    loadingIndicator.classList.add('hidden');
+                    loadingIndicator.classList.remove('flex');
+                }
             }
-            if (!inputText.value.trim()) {
-                alert('분석할 영어 지문을 입력해주세요.');
-                return;
-            }
-
-            // UI를 로딩 상태로 변경
-            runButton.disabled = true;
-            loadingIndicator.classList.remove('hidden');
-            loadingIndicator.classList.add('flex');
-            
-            [step1Container, step2Container, step3Container, step4Container].forEach(container => {
-                container.classList.add('hidden');
-            });
-
-            try {
-                const originalText = inputText.value.trim();
-
-                // 1단계와 2단계는 원본 텍스트를 기반으로 하므로 동시에 API 호출 (성능 향상)
-                const [step1Result, step2Result] = await Promise.all([
-                    callGpt(prompts.step1, originalText),
-                    callGpt(prompts.step2, originalText)
-                ]);
-
-                // 1, 2단계 결과 표시
-                step1Output.textContent = step1Result;
-                step1Container.classList.remove('hidden');
-
-                step2Output.textContent = step2Result;
-                step2Container.classList.remove('hidden');
-
-                // 3단계는 2단계의 결과를 기반으로 실행
-                const step3Result = await callGpt(prompts.step3, step2Result);
-                step3Output.textContent = step3Result;
-                step3Container.classList.remove('hidden');
-
-                // 4단계 로직 수정: 2단계 결과를 그대로 복사하여 표시
-                const step4Result = step2Result;
-                step4Output.textContent = step4Result;
-                step4Container.classList.remove('hidden');
-
-            } catch (error) {
-                alert(error.message);
-                console.error(error);
-            } finally {
-                // UI를 다시 활성 상태로 변경
-                runButton.disabled = false;
-                loadingIndicator.classList.add('hidden');
-                loadingIndicator.classList.remove('flex');
-            }
-        }
+        });
     </script>
 </body>
 </html>
