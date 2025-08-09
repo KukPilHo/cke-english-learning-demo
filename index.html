@@ -81,8 +81,29 @@
         </div>
     </div>
 
-    <script src="prompts.js"></script>
+    <script src="step1-analyze.js"></script>
+    <script src="step2-copy.js"></script>
+    <script src="step3-korean.js"></script>
+    <script src="step3-align.js"></script>
     <script>
+        // 모든 스크립트가 로드되었는지 확인
+        window.addEventListener('load', () => {
+            console.log('모든 리소스 로드 완료');
+            console.log('step1Prompts:', typeof step1Prompts);
+            console.log('step2Prompts:', typeof step2Prompts);
+            console.log('isolationPrompts:', typeof isolationPrompts);
+            
+            // 전역 변수들이 제대로 로드되었는지 확인
+            if (typeof step1Prompts === 'undefined') {
+                console.error('step1Prompts가 로드되지 않았습니다.');
+            }
+            if (typeof step2Prompts === 'undefined') {
+                console.error('step2Prompts가 로드되지 않았습니다.');
+            }
+            if (typeof isolationPrompts === 'undefined') {
+                console.error('isolationPrompts가 로드되지 않았습니다.');
+            }
+        });
         document.addEventListener('DOMContentLoaded', () => {
             const apiKeyInput = document.getElementById('apiKey');
             const inputText = document.getElementById('inputText');
@@ -116,8 +137,10 @@
                 
                 const API_URL = 'https://api.openai.com/v1/chat/completions';
                 const requestBody = {
-                    model: 'gpt-4-turbo',
-                    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }]
+                    model: 'gpt-4o',
+                    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+                    temperature: 0.1,  
+                    seed: 12345
                 };
                 
                 const response = await fetch(API_URL, {
@@ -148,22 +171,126 @@
 
                 try {
                     const originalText = inputText.value.trim();
-                    const [step1Result, step2Result] = await Promise.all([
-                        callGpt(prompts.step1, originalText),
-                        callGpt(prompts.step2, originalText)
-                    ]);
-
+                    
+                    // 변수 존재 확인
+                    if (typeof step1Prompts === 'undefined') {
+                        throw new Error('step1Prompts가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+                    }
+                    if (typeof step2Prompts === 'undefined') {
+                        throw new Error('step2Prompts가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+                    }
+                    
+                    // Step 1: Analyze - 문장 성분 분석
+                    const step1Prompt = `${step1Prompts.role}\n\n${step1Prompts.rules}\n\n${step1Prompts.principles}\n\n${step1Prompts.examples}\n\n${step1Prompts.output}`;
+                    const step1Result = await callGpt(step1Prompt, originalText);
                     step1Output.textContent = step1Result;
                     step1Container.classList.remove('hidden');
+
+                    // Step 2: Copy - 의미 블록 나누기
+                    const step2Prompt = `${step2Prompts.role}\n\n${step2Prompts.objective}\n\n${step2Prompts.absoluteRules}\n\n${step2Prompts.chunkingRules}\n\n${step2Prompts.learningCases}\n\n${step2Prompts.output}`;
+                    const step2Result = await callGpt(step2Prompt, originalText);
                     step2Output.textContent = step2Result;
                     step2Container.classList.remove('hidden');
 
-                    const step3Result = await callGpt(prompts.step3, step2Result);
+                    // Step 3: Korean - 정렬 기반 문장 단위 해석 (문장별 N-in → N-out 보장)
+                    let step3Result = '';
+
+                    const lines = step2Result.split(/\r?\n/);
+
+                    // 문장 끝 감지 (., ?, ! 및 닫는 따옴표/괄호 포함)
+                    const isSentenceTerminal = (text) => {
+                        const t = (text || '').trim();
+                        return /[.!?][\)\]\"'”’]*$/.test(t);
+                    };
+
+                    // 의미 블록을 문장 단위 그룹으로 묶기
+                    const sentenceGroups = [];
+                    let currentGroup = [];
+                    for (const line of lines) {
+                        currentGroup.push(line);
+                        if (isSentenceTerminal(line)) {
+                            sentenceGroups.push(currentGroup);
+                            currentGroup = [];
+                        }
+                    }
+                    if (currentGroup.length > 0) {
+                        sentenceGroups.push(currentGroup);
+                    }
+
+                    const alignedKoreanLines = [];
+
+                    const useAlignment = typeof alignmentPrompts !== 'undefined';
+                    const useIsolation = typeof isolationPrompts !== 'undefined';
+
+                    // 준비: 프롬프트 조립
+                    const alignmentPrompt = useAlignment
+                        ? `${alignmentPrompts.role}\n\n${alignmentPrompts.hardRules}\n\n${alignmentPrompts.guidance}\n\n${alignmentPrompts.example}\n\n${alignmentPrompts.output}`
+                        : null;
+                    const isolationPrompt = useIsolation
+                        ? `${isolationPrompts.role}\n\n${isolationPrompts.absoluteRules}\n\n${isolationPrompts.examples}\n\n${isolationPrompts.output}`
+                        : null;
+
+                    // 문장 단위로 정렬 번역 시도, 실패 시 라인 격리 번역으로 폴백
+                    for (const group of sentenceGroups) {
+                        const sentenceEN = group.join(' ').replace(/\s+/g, ' ').trim();
+
+                        let groupKO = [];
+                        if (useAlignment) {
+                            const userMsg = [
+                                '다음은 하나의 영어 문장과, 그 문장을 의미로 분할한 N개의 영어 줄입니다.',
+                                '영문 문장을 먼저 한국어로 자연스럽게 이해한 뒤, N개의 한국어 줄로 재분해하여, 각 줄이 입력 영어 줄과 1:1로 정확히 대응되도록 번역하세요.',
+                                '',
+                                `Sentence (EN): ${sentenceEN}`,
+                                `Lines (EN, N=${group.length}):`,
+                                ...group,
+                                '',
+                                `출력: 한국어 ${group.length}줄 (설명 금지, 각 줄은 줄바꿈으로만 구분)`
+                            ].join('\n');
+
+                            try {
+                                const aligned = await callGpt(alignmentPrompt, userMsg);
+                                const alignedLines = aligned.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+                                if (alignedLines.length === group.length) {
+                                    groupKO = alignedLines;
+                                } else {
+                                    console.warn('정렬 번역 줄 수 불일치. 격리 번역으로 폴백합니다.', { expected: group.length, got: alignedLines.length });
+                                }
+                            } catch (e) {
+                                console.warn('정렬 번역 실패. 격리 번역으로 폴백합니다.', e);
+                            }
+                        }
+
+                        if (groupKO.length === 0) {
+                            if (!useIsolation) throw new Error('isolationPrompts가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+                            for (const line of group) {
+                                const userMsg = `다음 영어 줄만 번역하세요. 다른 줄은 고려하지 마세요:\n${line}`;
+                                try {
+                                    const translated = await callGpt(isolationPrompt, userMsg);
+                                    groupKO.push(translated);
+                                } catch (error) {
+                                    console.error('라인 번역 실패. 원문 유지:', error);
+                                    groupKO.push(line);
+                                }
+                            }
+                        }
+
+                        alignedKoreanLines.push(...groupKO);
+                    }
+
+                    step3Result = alignedKoreanLines.join('\n');
+
                     step3Output.textContent = step3Result;
                     step3Container.classList.remove('hidden');
 
-                    step4Output.textContent = step2Result;
-                    step4Container.classList.remove('hidden');
+                    // Step 4: English - 영작 복원
+                    if (typeof step4Prompts !== 'undefined') {
+                        const step4Prompt = `${step4Prompts.role}\n\n${step4Prompts.objective}\n\n${step4Prompts.rules}\n\n${step4Prompts.output}`;
+                        const step4Result = await callGpt(step4Prompt, step3Result);
+                        step4Output.textContent = step4Result;
+                        step4Container.classList.remove('hidden');
+                    } else {
+                        console.log('step4Prompts가 없어 4단계를 건너뜁니다.');
+                    }
                 } catch (error) {
                     alert(error.message);
                 } finally {
